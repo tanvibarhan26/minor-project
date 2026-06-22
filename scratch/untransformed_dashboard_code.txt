@@ -1,0 +1,1449 @@
+const dataQualityMetrics = [
+	{
+		name: "Missing Values",
+		value: 15,
+		color: "#ef4444"
+	},
+	{
+		name: "Duplicates",
+		value: 8,
+		color: "#8b5cf6"
+	},
+	{
+		name: "Format Errors",
+		value: 12,
+		color: "#f59e0b"
+	},
+	{
+		name: "Valid Data",
+		value: 65,
+		color: "#10b981"
+	}
+];
+const Dashboard = () => {
+	_s();
+	const location = useLocation();
+	const navigate = useNavigate();
+	const [activeTab, setActiveTab] = useState("analysis");
+	const [currentAnalysis, setCurrentAnalysis] = useState(location.state?.analysisData || null);
+	const [showRaw, setShowRaw] = useState(false);
+	const [showReport, setShowReport] = useState(false);
+	const [reportTab, setReportTab] = useState("comparison");
+	const [comparisonMode, setComparisonMode] = useState("split");
+	const [activeTableTab, setActiveTableTab] = useState("original");
+	const [apiKey, setApiKey] = useState("");
+	const [logs, setLogs] = useState([]);
+	const [isSyncing, setIsSyncing] = useState(false);
+	const { addNotification } = useNotifications();
+	const user = JSON.parse(localStorage.getItem("user") || "{}");
+	const metrics = currentAnalysis?.metrics;
+	const healthBreakdown = metrics?.health_breakdown || {
+		accuracy: 85,
+		completeness: 90,
+		consistency: 75,
+		structural: 100
+	};
+	const missingByColumn = currentAnalysis?.missing_by_column || {};
+	const changesReport = currentAnalysis?.changes_report || [];
+	const originalPreview = currentAnalysis?.original_preview || [];
+	const rawPreview = currentAnalysis?.raw_preview || [];
+	const isDataAvailable = !!currentAnalysis;
+	useEffect(() => {
+		if (isDataAvailable) {
+			// Small delay for a smoother entrance
+			const timer = setTimeout(() => setShowReport(true), 800);
+			return () => clearTimeout(timer);
+		}
+	}, [isDataAvailable]);
+	const getCellStatus = (rowIndex, colName, value) => {
+		const origRow = originalPreview[rowIndex];
+		if (!origRow) return "normal";
+		const origVal = origRow[colName];
+		// Check if it was missing in original but filled in cleaned
+		if ((origVal === null || origVal === undefined || origVal === "") && value !== null && value !== undefined && value !== "") {
+			return "imputed";
+		}
+		// Check if it was modified (e.g., standardizations like lowercase, price normalization)
+		if (origVal !== value && origVal !== null && origVal !== undefined) {
+			return "corrected";
+		}
+		return "normal";
+	};
+	useEffect(() => {
+		if (activeTab === "enterprise") {
+			api.get("/api/enterprise/logs").then((res) => setLogs(res.data));
+		}
+	}, [activeTab]);
+	const handleDownload = () => {
+		if (!currentAnalysis?.file_id) return;
+		window.open(`${API_BASE_URL}/api/download/${currentAnalysis.file_id}`, "_blank");
+		// Clear data for new execution as requested
+		setTimeout(() => {
+			setCurrentAnalysis(null);
+			navigate("/dashboard", {
+				replace: true,
+				state: {}
+			});
+			addNotification("Workspace Reset", "Ready for a new data analysis task.", "info");
+		}, 1500);
+	};
+	const handleKeyGen = async () => {
+		const res = await api.post(`/api/developer/keygen?email=${user.email}`);
+		setApiKey(res.data.api_key);
+	};
+	const handleSheetsSync = async () => {
+		setIsSyncing(true);
+		await api.post(`/api/integrations/gsheets/sync?email=${user.email}&file_id=${currentAnalysis?.file_id || "test"}`);
+		setTimeout(() => setIsSyncing(false), 2e3);
+	};
+	const dynamicQualityMetrics = isDataAvailable ? [
+		{
+			name: "Missing Values",
+			value: metrics.missing_values,
+			color: "#ef4444"
+		},
+		{
+			name: "Duplicates",
+			value: metrics.duplicates,
+			color: "#8b5cf6"
+		},
+		{
+			name: "Valid Data",
+			value: Math.max(0, metrics.total_rows * metrics.total_columns - metrics.missing_values - metrics.duplicates),
+			color: "#10b981"
+		}
+	] : dataQualityMetrics;
+	const dynamicAnomalyData = isDataAvailable ? Object.keys(missingByColumn).map((key) => ({
+		category: key,
+		count: missingByColumn[key]
+	})) : [];
+	const score = isDataAvailable ? metrics.quality_score : 82;
+	const filename = isDataAvailable ? currentAnalysis.filename : "No dataset selected";
+	return /* @__PURE__ */ _jsxDEV("div", {
+		className: "dashboard-page",
+		children: [
+			/* @__PURE__ */ _jsxDEV("div", {
+				className: "dashboard-nav-tabs",
+				children: [
+					/* @__PURE__ */ _jsxDEV("button", {
+						className: `tab-btn ${activeTab === "analysis" ? "active" : ""}`,
+						onClick: () => setActiveTab("analysis"),
+						children: [/* @__PURE__ */ _jsxDEV(BarChart, { size: 18 }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 121,
+							columnNumber: 11
+						}, this), " AI Analysis"]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 120,
+						columnNumber: 9
+					}, this),
+					/* @__PURE__ */ _jsxDEV("button", {
+						className: `tab-btn ${activeTab === "enterprise" ? "active" : ""}`,
+						onClick: () => setActiveTab("enterprise"),
+						children: [/* @__PURE__ */ _jsxDEV(Shield, { size: 18 }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 124,
+							columnNumber: 11
+						}, this), " Enterprise"]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 123,
+						columnNumber: 9
+					}, this),
+					/* @__PURE__ */ _jsxDEV("button", {
+						className: `tab-btn ${activeTab === "developer" ? "active" : ""}`,
+						onClick: () => setActiveTab("developer"),
+						children: [/* @__PURE__ */ _jsxDEV(Cpu, { size: 18 }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 127,
+							columnNumber: 11
+						}, this), " Developer"]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 126,
+						columnNumber: 9
+					}, this)
+				]
+			}, void 0, true, {
+				fileName: _jsxFileName,
+				lineNumber: 119,
+				columnNumber: 7
+			}, this),
+			/* @__PURE__ */ _jsxDEV("div", {
+				className: "dashboard-header",
+				children: [/* @__PURE__ */ _jsxDEV("div", { children: [/* @__PURE__ */ _jsxDEV("h2", { children: activeTab === "analysis" ? "Neural Workspace" : activeTab === "enterprise" ? "Audit & Security" : "Developer Hub" }, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 133,
+					columnNumber: 11
+				}, this), /* @__PURE__ */ _jsxDEV("p", {
+					className: "text-muted",
+					children: ["Dataset: ", filename]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 134,
+					columnNumber: 11
+				}, this)] }, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 132,
+					columnNumber: 9
+				}, this), /* @__PURE__ */ _jsxDEV("div", {
+					className: "dashboard-actions",
+					children: activeTab === "analysis" && /* @__PURE__ */ _jsxDEV(_Fragment, { children: [
+						/* @__PURE__ */ _jsxDEV("button", {
+							className: `btn-sync ${isSyncing ? "loading" : ""}`,
+							onClick: handleSheetsSync,
+							children: [
+								/* @__PURE__ */ _jsxDEV(Link2, { size: 18 }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 140,
+									columnNumber: 17
+								}, this),
+								" ",
+								isSyncing ? "Syncing..." : "Sync to G-Sheets"
+							]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 139,
+							columnNumber: 15
+						}, this),
+						/* @__PURE__ */ _jsxDEV("button", {
+							className: "btn-outline",
+							onClick: () => setShowReport(true),
+							disabled: !isDataAvailable,
+							children: [/* @__PURE__ */ _jsxDEV(Search, { size: 18 }, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 143,
+								columnNumber: 17
+							}, this), " View Report"]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 142,
+							columnNumber: 15
+						}, this),
+						/* @__PURE__ */ _jsxDEV("button", {
+							className: "btn-primary",
+							onClick: handleDownload,
+							disabled: !isDataAvailable,
+							children: [/* @__PURE__ */ _jsxDEV(Download, { size: 18 }, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 146,
+								columnNumber: 17
+							}, this), " Export"]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 145,
+							columnNumber: 15
+						}, this)
+					] }, void 0, true)
+				}, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 136,
+					columnNumber: 9
+				}, this)]
+			}, void 0, true, {
+				fileName: _jsxFileName,
+				lineNumber: 131,
+				columnNumber: 7
+			}, this),
+			activeTab === "analysis" && /* @__PURE__ */ _jsxDEV("div", {
+				className: "analysis-content",
+				children: [/* @__PURE__ */ _jsxDEV("div", {
+					className: "health-dashboard-grid",
+					children: [/* @__PURE__ */ _jsxDEV("div", {
+						className: "main-score-card glass-panel",
+						children: [/* @__PURE__ */ _jsxDEV("div", {
+							className: "score-header",
+							children: [/* @__PURE__ */ _jsxDEV("h3", { children: "Dataset Health Score" }, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 158,
+								columnNumber: 17
+							}, this), /* @__PURE__ */ _jsxDEV("span", {
+								className: "score-badge",
+								children: [score, "%"]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 159,
+								columnNumber: 17
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 157,
+							columnNumber: 15
+						}, this), /* @__PURE__ */ _jsxDEV("div", {
+							className: "health-bars",
+							children: Object.entries(healthBreakdown).map(([key, val]) => /* @__PURE__ */ _jsxDEV("div", {
+								className: "health-bar-row",
+								children: [/* @__PURE__ */ _jsxDEV("div", {
+									className: "bar-label",
+									children: [/* @__PURE__ */ _jsxDEV("span", {
+										className: "capitalize",
+										children: key
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 165,
+										columnNumber: 23
+									}, this), /* @__PURE__ */ _jsxDEV("span", { children: [val, "%"] }, void 0, true, {
+										fileName: _jsxFileName,
+										lineNumber: 166,
+										columnNumber: 23
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 164,
+									columnNumber: 21
+								}, this), /* @__PURE__ */ _jsxDEV("div", {
+									className: "bar-bg",
+									children: /* @__PURE__ */ _jsxDEV("div", {
+										className: "bar-fill",
+										style: {
+											width: `${val}%`,
+											backgroundColor: val > 90 ? "var(--accent-success)" : val > 70 ? "var(--accent-primary)" : "var(--accent-danger)"
+										}
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 169,
+										columnNumber: 23
+									}, this)
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 168,
+									columnNumber: 21
+								}, this)]
+							}, key, true, {
+								fileName: _jsxFileName,
+								lineNumber: 163,
+								columnNumber: 19
+							}, this))
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 161,
+							columnNumber: 15
+						}, this)]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 156,
+						columnNumber: 13
+					}, this), /* @__PURE__ */ _jsxDEV("div", {
+						className: "ai-insights-panel glass-panel",
+						children: [/* @__PURE__ */ _jsxDEV("h3", { children: [/* @__PURE__ */ _jsxDEV(TrendingUp, { size: 18 }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 177,
+							columnNumber: 19
+						}, this), " Predictive Insights"] }, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 177,
+							columnNumber: 15
+						}, this), /* @__PURE__ */ _jsxDEV("div", {
+							className: "insights-list",
+							children: [
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "insight-item warning",
+									children: [/* @__PURE__ */ _jsxDEV(AlertTriangle, { size: 16 }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 180,
+										columnNumber: 19
+									}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Detected potential drift in Date formats for \"created_at\" column." }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 181,
+										columnNumber: 19
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 179,
+									columnNumber: 17
+								}, this),
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "insight-item success",
+									children: [/* @__PURE__ */ _jsxDEV(CheckCircle, { size: 16 }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 184,
+										columnNumber: 19
+									}, this), /* @__PURE__ */ _jsxDEV("span", { children: "AI prediction: Auto-imputation can recover 94% of missing values." }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 185,
+										columnNumber: 19
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 183,
+									columnNumber: 17
+								}, this),
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "insight-item info",
+									children: [/* @__PURE__ */ _jsxDEV(Info, { size: 16 }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 188,
+										columnNumber: 19
+									}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Structural Integrity is high (100%). Ready for API deployment." }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 189,
+										columnNumber: 19
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 187,
+									columnNumber: 17
+								}, this)
+							]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 178,
+							columnNumber: 15
+						}, this)]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 176,
+						columnNumber: 13
+					}, this)]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 155,
+					columnNumber: 11
+				}, this), /* @__PURE__ */ _jsxDEV("div", {
+					className: "charts-grid",
+					children: [/* @__PURE__ */ _jsxDEV("div", {
+						className: "chart-container glass-panel",
+						children: [/* @__PURE__ */ _jsxDEV("h3", { children: "Data Quality Distribution" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 197,
+							columnNumber: 15
+						}, this), /* @__PURE__ */ _jsxDEV("div", {
+							className: "chart-wrapper",
+							children: /* @__PURE__ */ _jsxDEV(ResponsiveContainer, {
+								width: "100%",
+								height: "100%",
+								children: /* @__PURE__ */ _jsxDEV(PieChart, { children: [
+									/* @__PURE__ */ _jsxDEV(Pie, {
+										data: dynamicQualityMetrics,
+										cx: "50%",
+										cy: "50%",
+										innerRadius: 60,
+										outerRadius: 80,
+										paddingAngle: 5,
+										dataKey: "value",
+										children: dynamicQualityMetrics.map((entry, index) => /* @__PURE__ */ _jsxDEV(Cell, { fill: entry.color }, `cell-${index}`, false, {
+											fileName: _jsxFileName,
+											lineNumber: 202,
+											columnNumber: 68
+										}, this))
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 201,
+										columnNumber: 21
+									}, this),
+									/* @__PURE__ */ _jsxDEV(RechartsTooltip, {
+										contentStyle: {
+											backgroundColor: "var(--panel-bg)",
+											borderColor: "var(--panel-border)"
+										},
+										itemStyle: { color: "var(--text-main)" }
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 204,
+										columnNumber: 21
+									}, this),
+									/* @__PURE__ */ _jsxDEV(Legend, {}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 205,
+										columnNumber: 21
+									}, this)
+								] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 200,
+									columnNumber: 19
+								}, this)
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 199,
+								columnNumber: 17
+							}, this)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 198,
+							columnNumber: 15
+						}, this)]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 196,
+						columnNumber: 13
+					}, this), /* @__PURE__ */ _jsxDEV("div", {
+						className: "chart-container glass-panel",
+						children: [/* @__PURE__ */ _jsxDEV("h3", { children: "Processing Metrics" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 212,
+							columnNumber: 15
+						}, this), /* @__PURE__ */ _jsxDEV("div", {
+							className: "summary-stats",
+							children: [
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "stat-row",
+									children: [
+										/* @__PURE__ */ _jsxDEV("span", { children: "Total Rows" }, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 214,
+											columnNumber: 43
+										}, this),
+										" ",
+										/* @__PURE__ */ _jsxDEV("span", {
+											className: "stat-val",
+											children: metrics?.total_rows || 0
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 214,
+											columnNumber: 67
+										}, this)
+									]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 214,
+									columnNumber: 17
+								}, this),
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "stat-row",
+									children: [
+										/* @__PURE__ */ _jsxDEV("span", { children: "Anomalies Fixed" }, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 215,
+											columnNumber: 43
+										}, this),
+										" ",
+										/* @__PURE__ */ _jsxDEV("span", {
+											className: "stat-val text-success",
+											children: changesReport.length
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 215,
+											columnNumber: 72
+										}, this)
+									]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 215,
+									columnNumber: 17
+								}, this),
+								/* @__PURE__ */ _jsxDEV("div", {
+									className: "stat-row",
+									children: [
+										/* @__PURE__ */ _jsxDEV("span", { children: "Storage Status" }, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 216,
+											columnNumber: 43
+										}, this),
+										" ",
+										/* @__PURE__ */ _jsxDEV("span", {
+											className: "stat-val",
+											children: "Encrypted (AES-256)"
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 216,
+											columnNumber: 71
+										}, this)
+									]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 216,
+									columnNumber: 17
+								}, this)
+							]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 213,
+							columnNumber: 15
+						}, this)]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 211,
+						columnNumber: 13
+					}, this)]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 195,
+					columnNumber: 11
+				}, this)]
+			}, void 0, true, {
+				fileName: _jsxFileName,
+				lineNumber: 154,
+				columnNumber: 9
+			}, this),
+			activeTab === "enterprise" && /* @__PURE__ */ _jsxDEV("div", {
+				className: "enterprise-content glass-panel",
+				children: [/* @__PURE__ */ _jsxDEV("div", {
+					className: "content-header",
+					children: [/* @__PURE__ */ _jsxDEV("h3", { children: [/* @__PURE__ */ _jsxDEV(List, { size: 20 }, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 226,
+						columnNumber: 17
+					}, this), " System Audit Trail"] }, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 226,
+						columnNumber: 13
+					}, this), /* @__PURE__ */ _jsxDEV("p", {
+						className: "text-muted",
+						children: "GDPR compliant activity logging for enterprise security."
+					}, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 227,
+						columnNumber: 13
+					}, this)]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 225,
+					columnNumber: 11
+				}, this), /* @__PURE__ */ _jsxDEV("div", {
+					className: "audit-table",
+					children: /* @__PURE__ */ _jsxDEV("table", { children: [/* @__PURE__ */ _jsxDEV("thead", { children: /* @__PURE__ */ _jsxDEV("tr", { children: [
+						/* @__PURE__ */ _jsxDEV("th", { children: "Timestamp" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 233,
+							columnNumber: 19
+						}, this),
+						/* @__PURE__ */ _jsxDEV("th", { children: "Action" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 234,
+							columnNumber: 19
+						}, this),
+						/* @__PURE__ */ _jsxDEV("th", { children: "User" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 235,
+							columnNumber: 19
+						}, this),
+						/* @__PURE__ */ _jsxDEV("th", { children: "Details" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 236,
+							columnNumber: 19
+						}, this)
+					] }, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 232,
+						columnNumber: 17
+					}, this) }, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 231,
+						columnNumber: 15
+					}, this), /* @__PURE__ */ _jsxDEV("tbody", { children: logs.length > 0 ? logs.map((log, i) => /* @__PURE__ */ _jsxDEV("tr", { children: [
+						/* @__PURE__ */ _jsxDEV("td", { children: new Date(log.timestamp * 1e3).toLocaleString() }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 242,
+							columnNumber: 21
+						}, this),
+						/* @__PURE__ */ _jsxDEV("td", { children: /* @__PURE__ */ _jsxDEV("span", {
+							className: `action-pill ${log.action.toLowerCase()}`,
+							children: log.action
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 243,
+							columnNumber: 25
+						}, this) }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 243,
+							columnNumber: 21
+						}, this),
+						/* @__PURE__ */ _jsxDEV("td", { children: log.user }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 244,
+							columnNumber: 21
+						}, this),
+						/* @__PURE__ */ _jsxDEV("td", { children: log.details }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 245,
+							columnNumber: 21
+						}, this)
+					] }, i, true, {
+						fileName: _jsxFileName,
+						lineNumber: 241,
+						columnNumber: 19
+					}, this)) : /* @__PURE__ */ _jsxDEV("tr", { children: /* @__PURE__ */ _jsxDEV("td", {
+						colSpan: "4",
+						className: "text-center",
+						children: "No logs found in current audit period."
+					}, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 248,
+						columnNumber: 23
+					}, this) }, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 248,
+						columnNumber: 19
+					}, this) }, void 0, false, {
+						fileName: _jsxFileName,
+						lineNumber: 239,
+						columnNumber: 15
+					}, this)] }, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 230,
+						columnNumber: 13
+					}, this)
+				}, void 0, false, {
+					fileName: _jsxFileName,
+					lineNumber: 229,
+					columnNumber: 11
+				}, this)]
+			}, void 0, true, {
+				fileName: _jsxFileName,
+				lineNumber: 224,
+				columnNumber: 9
+			}, this),
+			activeTab === "developer" && /* @__PURE__ */ _jsxDEV("div", {
+				className: "developer-content",
+				children: [/* @__PURE__ */ _jsxDEV("div", {
+					className: "api-keygen-card glass-panel",
+					children: [
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "card-header",
+							children: [/* @__PURE__ */ _jsxDEV(Key, {
+								size: 24,
+								color: "var(--accent-primary)"
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 260,
+								columnNumber: 15
+							}, this), /* @__PURE__ */ _jsxDEV("h3", { children: "API Access Key" }, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 261,
+								columnNumber: 15
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 259,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("p", { children: "Use this key to authorize REST API calls for dataset processing." }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 263,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "key-display",
+							children: [/* @__PURE__ */ _jsxDEV("input", {
+								type: "text",
+								readOnly: true,
+								value: apiKey || "••••••••••••••••••••••••••••••",
+								className: "glass-input"
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 265,
+								columnNumber: 15
+							}, this), /* @__PURE__ */ _jsxDEV("button", {
+								className: "btn-primary",
+								onClick: handleKeyGen,
+								children: "Regenerate"
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 266,
+								columnNumber: 15
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 264,
+							columnNumber: 13
+						}, this)
+					]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 258,
+					columnNumber: 11
+				}, this), /* @__PURE__ */ _jsxDEV("div", {
+					className: "api-docs-preview glass-panel mt-4",
+					children: [/* @__PURE__ */ _jsxDEV("div", {
+						className: "card-header",
+						children: [/* @__PURE__ */ _jsxDEV(Database, {
+							size: 24,
+							color: "var(--accent-neon)"
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 272,
+							columnNumber: 15
+						}, this), /* @__PURE__ */ _jsxDEV("h3", { children: "Endpoint Quick Reference" }, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 273,
+							columnNumber: 15
+						}, this)]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 271,
+						columnNumber: 13
+					}, this), /* @__PURE__ */ _jsxDEV("div", {
+						className: "endpoint-list",
+						children: [
+							/* @__PURE__ */ _jsxDEV("div", {
+								className: "endpoint-item",
+								children: [/* @__PURE__ */ _jsxDEV("code", { children: "POST /api/analyze" }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 276,
+									columnNumber: 46
+								}, this), " - Upload & Clean"]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 276,
+								columnNumber: 15
+							}, this),
+							/* @__PURE__ */ _jsxDEV("div", {
+								className: "endpoint-item",
+								children: [/* @__PURE__ */ _jsxDEV("code", { children: "GET /api/download/:id" }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 277,
+									columnNumber: 46
+								}, this), " - Fetch Cleaned CSV"]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 277,
+								columnNumber: 15
+							}, this),
+							/* @__PURE__ */ _jsxDEV("div", {
+								className: "endpoint-item",
+								children: [/* @__PURE__ */ _jsxDEV("code", { children: "POST /api/sync/sheets" }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 278,
+									columnNumber: 46
+								}, this), " - Real-time G-Sheets Sync"]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 278,
+								columnNumber: 15
+							}, this)
+						]
+					}, void 0, true, {
+						fileName: _jsxFileName,
+						lineNumber: 275,
+						columnNumber: 13
+					}, this)]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 270,
+					columnNumber: 11
+				}, this)]
+			}, void 0, true, {
+				fileName: _jsxFileName,
+				lineNumber: 257,
+				columnNumber: 9
+			}, this),
+			showReport && /* @__PURE__ */ _jsxDEV("div", {
+				className: "modal-overlay",
+				onClick: () => setShowReport(false),
+				children: /* @__PURE__ */ _jsxDEV("div", {
+					className: "report-modal glass-panel",
+					onClick: (e) => e.stopPropagation(),
+					children: [
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "report-header",
+							children: [/* @__PURE__ */ _jsxDEV("div", {
+								className: "report-title-area",
+								children: [/* @__PURE__ */ _jsxDEV(Sparkles, {
+									size: 24,
+									className: "text-primary animate-pulse"
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 289,
+									columnNumber: 17
+								}, this), /* @__PURE__ */ _jsxDEV("div", { children: [/* @__PURE__ */ _jsxDEV("h3", { children: "Neural Cleansing & Alignment Report" }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 291,
+									columnNumber: 19
+								}, this), /* @__PURE__ */ _jsxDEV("p", {
+									className: "text-muted",
+									children: ["Dataset: ", filename]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 292,
+									columnNumber: 19
+								}, this)] }, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 290,
+									columnNumber: 17
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 288,
+								columnNumber: 15
+							}, this), /* @__PURE__ */ _jsxDEV("button", {
+								className: "btn-icon-small",
+								onClick: () => setShowReport(false),
+								children: "×"
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 295,
+								columnNumber: 15
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 287,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "report-overview-grid",
+							children: [/* @__PURE__ */ _jsxDEV("div", {
+								className: "report-score-card glass-panel-inner",
+								children: [/* @__PURE__ */ _jsxDEV("span", {
+									className: "card-lbl",
+									children: "Dataset Health Shift"
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 301,
+									columnNumber: 17
+								}, this), /* @__PURE__ */ _jsxDEV("div", {
+									className: "score-shift-display",
+									children: [
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "score-block orig",
+											children: [/* @__PURE__ */ _jsxDEV("span", {
+												className: "score-val",
+												children: [metrics?.original_quality_score || 0, "%"]
+											}, void 0, true, {
+												fileName: _jsxFileName,
+												lineNumber: 304,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", {
+												className: "score-lbl",
+												children: "Original"
+											}, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 305,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 303,
+											columnNumber: 19
+										}, this),
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "score-arrow",
+											children: [/* @__PURE__ */ _jsxDEV(TrendingUp, {
+												size: 24,
+												className: "text-success"
+											}, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 308,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", {
+												className: "improvement-badge",
+												children: [
+													"+",
+													Math.max(0, (metrics?.quality_score || 0) - (metrics?.original_quality_score || 0)).toFixed(1),
+													"%"
+												]
+											}, void 0, true, {
+												fileName: _jsxFileName,
+												lineNumber: 309,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 307,
+											columnNumber: 19
+										}, this),
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "score-block clean",
+											children: [/* @__PURE__ */ _jsxDEV("span", {
+												className: "score-val glow",
+												children: [metrics?.quality_score || 0, "%"]
+											}, void 0, true, {
+												fileName: _jsxFileName,
+												lineNumber: 312,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", {
+												className: "score-lbl",
+												children: "Cleaned"
+											}, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 313,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 311,
+											columnNumber: 19
+										}, this)
+									]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 302,
+									columnNumber: 17
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 300,
+								columnNumber: 15
+							}, this), /* @__PURE__ */ _jsxDEV("div", {
+								className: "report-stats-card glass-panel-inner",
+								children: [/* @__PURE__ */ _jsxDEV("span", {
+									className: "card-lbl",
+									children: "Anomaly Cleanup Summary"
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 320,
+									columnNumber: 17
+								}, this), /* @__PURE__ */ _jsxDEV("div", {
+									className: "r-stats-grid",
+									children: [
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "r-stat",
+											children: [/* @__PURE__ */ _jsxDEV("strong", { children: metrics?.original_missing || 0 }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 323,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Missing → Fixed" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 324,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 322,
+											columnNumber: 19
+										}, this),
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "r-stat",
+											children: [/* @__PURE__ */ _jsxDEV("strong", { children: metrics?.original_duplicates || 0 }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 327,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Duplicates → Removed" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 328,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 326,
+											columnNumber: 19
+										}, this),
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "r-stat",
+											children: [/* @__PURE__ */ _jsxDEV("strong", { children: changesReport.length }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 331,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Rules Applied" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 332,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 330,
+											columnNumber: 19
+										}, this),
+										/* @__PURE__ */ _jsxDEV("div", {
+											className: "r-stat",
+											children: [/* @__PURE__ */ _jsxDEV("strong", { children: metrics?.total_rows }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 335,
+												columnNumber: 21
+											}, this), /* @__PURE__ */ _jsxDEV("span", { children: "Total Rows" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 336,
+												columnNumber: 21
+											}, this)]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 334,
+											columnNumber: 19
+										}, this)
+									]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 321,
+									columnNumber: 17
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 319,
+								columnNumber: 15
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 298,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "report-nav-bar",
+							children: [/* @__PURE__ */ _jsxDEV("div", {
+								className: "report-subtabs",
+								children: [/* @__PURE__ */ _jsxDEV("button", {
+									className: `report-tab-btn ${reportTab === "comparison" ? "active" : ""}`,
+									onClick: () => setReportTab("comparison"),
+									children: [/* @__PURE__ */ _jsxDEV(Database, { size: 16 }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 349,
+										columnNumber: 19
+									}, this), " Data Comparison Preview"]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 345,
+									columnNumber: 17
+								}, this), /* @__PURE__ */ _jsxDEV("button", {
+									className: `report-tab-btn ${reportTab === "logs" ? "active" : ""}`,
+									onClick: () => setReportTab("logs"),
+									children: [/* @__PURE__ */ _jsxDEV(List, { size: 16 }, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 355,
+										columnNumber: 19
+									}, this), " Cleaning Activity Logs"]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 351,
+									columnNumber: 17
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 344,
+								columnNumber: 15
+							}, this), reportTab === "comparison" && /* @__PURE__ */ _jsxDEV("div", {
+								className: "comparison-controls",
+								children: [/* @__PURE__ */ _jsxDEV("div", {
+									className: "view-mode-selector",
+									children: [/* @__PURE__ */ _jsxDEV("button", {
+										className: `control-btn ${comparisonMode === "split" ? "active" : ""}`,
+										onClick: () => setComparisonMode("split"),
+										title: "Show both tables vertically stacked (best for full-width column view)",
+										children: "Stacked View (Top/Bottom)"
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 362,
+										columnNumber: 21
+									}, this), /* @__PURE__ */ _jsxDEV("button", {
+										className: `control-btn ${comparisonMode === "tabbed" ? "active" : ""}`,
+										onClick: () => setComparisonMode("tabbed"),
+										title: "Single table with tabs",
+										children: "Tabbed View"
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 369,
+										columnNumber: 21
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 361,
+									columnNumber: 19
+								}, this), comparisonMode === "tabbed" && /* @__PURE__ */ _jsxDEV("div", {
+									className: "table-selector",
+									children: [/* @__PURE__ */ _jsxDEV("button", {
+										className: `table-btn-tab ${activeTableTab === "original" ? "active orig" : ""}`,
+										onClick: () => setActiveTableTab("original"),
+										children: "Original (Before)"
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 380,
+										columnNumber: 23
+									}, this), /* @__PURE__ */ _jsxDEV("button", {
+										className: `table-btn-tab ${activeTableTab === "cleaned" ? "active clean" : ""}`,
+										onClick: () => setActiveTableTab("cleaned"),
+										children: "Cleaned (After)"
+									}, void 0, false, {
+										fileName: _jsxFileName,
+										lineNumber: 386,
+										columnNumber: 23
+									}, this)]
+								}, void 0, true, {
+									fileName: _jsxFileName,
+									lineNumber: 379,
+									columnNumber: 21
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 360,
+								columnNumber: 17
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 343,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "report-content-body",
+							children: reportTab === "logs" ? /* @__PURE__ */ _jsxDEV("div", {
+								className: "report-changes-list",
+								children: [/* @__PURE__ */ _jsxDEV("h4", { children: "Neural Pipeline Executions" }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 402,
+									columnNumber: 19
+								}, this), changesReport.length > 0 ? /* @__PURE__ */ _jsxDEV("div", {
+									className: "changes-timeline",
+									children: changesReport.map((change, i) => /* @__PURE__ */ _jsxDEV("div", {
+										className: "change-log-card",
+										children: [/* @__PURE__ */ _jsxDEV(CheckCircle, {
+											size: 16,
+											color: "var(--accent-success)"
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 407,
+											columnNumber: 27
+										}, this), /* @__PURE__ */ _jsxDEV("p", { children: change }, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 408,
+											columnNumber: 27
+										}, this)]
+									}, i, true, {
+										fileName: _jsxFileName,
+										lineNumber: 406,
+										columnNumber: 25
+									}, this))
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 404,
+									columnNumber: 21
+								}, this) : /* @__PURE__ */ _jsxDEV("p", {
+									className: "text-muted padding-large text-center",
+									children: "No anomalies were found in the dataset schema. The data was perfectly aligned!"
+								}, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 413,
+									columnNumber: 21
+								}, this)]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 401,
+								columnNumber: 17
+							}, this) : /* @__PURE__ */ _jsxDEV(
+								"div",
+								/* Comparison Mode */
+								{
+									className: `comparison-container ${comparisonMode} ${originalPreview.length === 0 ? "no-original" : ""}`,
+									children: [originalPreview.length > 0 && (comparisonMode === "split" || comparisonMode === "tabbed" && activeTableTab === "original") && /* @__PURE__ */ _jsxDEV("div", {
+										className: "comparison-table-wrapper original-side",
+										children: [/* @__PURE__ */ _jsxDEV("div", {
+											className: "table-header-title original-title",
+											children: [/* @__PURE__ */ _jsxDEV(AlertTriangle, { size: 16 }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 424,
+												columnNumber: 25
+											}, this), " Original Dataset (Before Cleaning)"]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 423,
+											columnNumber: 23
+										}, this), /* @__PURE__ */ _jsxDEV("div", {
+											className: "table-container report-table-container",
+											children: /* @__PURE__ */ _jsxDEV("table", { children: [/* @__PURE__ */ _jsxDEV("thead", { children: /* @__PURE__ */ _jsxDEV("tr", { children: originalPreview.length > 0 ? Object.keys(originalPreview[0]).map((key) => /* @__PURE__ */ _jsxDEV("th", { children: key }, key, false, {
+												fileName: _jsxFileName,
+												lineNumber: 431,
+												columnNumber: 76
+											}, this)) : /* @__PURE__ */ _jsxDEV("th", { children: "Original Data Columns" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 433,
+												columnNumber: 33
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 429,
+												columnNumber: 29
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 428,
+												columnNumber: 27
+											}, this), /* @__PURE__ */ _jsxDEV("tbody", { children: originalPreview.length > 0 ? originalPreview.map((row, rowIndex) => /* @__PURE__ */ _jsxDEV("tr", { children: Object.keys(row).map((colName) => {
+												const val = row[colName];
+												const isMissing = val === null || val === undefined || val === "";
+												return /* @__PURE__ */ _jsxDEV("td", {
+													className: isMissing ? "cell-missing" : "",
+													children: isMissing ? "[Missing / NaN]" : val?.toString()
+												}, colName, false, {
+													fileName: _jsxFileName,
+													lineNumber: 445,
+													columnNumber: 39
+												}, this);
+											}) }, rowIndex, false, {
+												fileName: _jsxFileName,
+												lineNumber: 440,
+												columnNumber: 33
+											}, this)) : /* @__PURE__ */ _jsxDEV("tr", { children: /* @__PURE__ */ _jsxDEV("td", {
+												className: "text-center padding-large",
+												style: {
+													color: "var(--text-muted)",
+													fontStyle: "italic"
+												},
+												children: "No Original Dataset Preview Loaded. Please re-upload a dataset file to generate a preview."
+											}, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 457,
+												columnNumber: 33
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 456,
+												columnNumber: 31
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 437,
+												columnNumber: 27
+											}, this)] }, void 0, true, {
+												fileName: _jsxFileName,
+												lineNumber: 427,
+												columnNumber: 25
+											}, this)
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 426,
+											columnNumber: 23
+										}, this)]
+									}, void 0, true, {
+										fileName: _jsxFileName,
+										lineNumber: 422,
+										columnNumber: 21
+									}, this), (comparisonMode === "split" || comparisonMode === "tabbed" && activeTableTab === "cleaned") && /* @__PURE__ */ _jsxDEV("div", {
+										className: "comparison-table-wrapper cleaned-side",
+										children: [/* @__PURE__ */ _jsxDEV("div", {
+											className: "table-header-title cleaned-title",
+											children: [/* @__PURE__ */ _jsxDEV(CheckCircle, { size: 16 }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 472,
+												columnNumber: 25
+											}, this), " Neural Corrected Dataset (After Cleaning)"]
+										}, void 0, true, {
+											fileName: _jsxFileName,
+											lineNumber: 471,
+											columnNumber: 23
+										}, this), /* @__PURE__ */ _jsxDEV("div", {
+											className: "table-container report-table-container",
+											children: /* @__PURE__ */ _jsxDEV("table", { children: [/* @__PURE__ */ _jsxDEV("thead", { children: /* @__PURE__ */ _jsxDEV("tr", { children: rawPreview.length > 0 ? Object.keys(rawPreview[0]).map((key) => /* @__PURE__ */ _jsxDEV("th", { children: key }, key, false, {
+												fileName: _jsxFileName,
+												lineNumber: 479,
+												columnNumber: 71
+											}, this)) : /* @__PURE__ */ _jsxDEV("th", { children: "Cleaned Data Columns" }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 481,
+												columnNumber: 33
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 477,
+												columnNumber: 29
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 476,
+												columnNumber: 27
+											}, this), /* @__PURE__ */ _jsxDEV("tbody", { children: rawPreview.length > 0 ? rawPreview.map((row, rowIndex) => /* @__PURE__ */ _jsxDEV("tr", { children: Object.keys(row).map((colName) => {
+												const val = row[colName];
+												const status = getCellStatus(rowIndex, colName, val);
+												let cellClass = "";
+												let displayVal = val?.toString();
+												let label = null;
+												if (status === "imputed") {
+													cellClass = "cell-imputed";
+													label = "AI Imputed";
+												} else if (status === "corrected") {
+													cellClass = "cell-corrected";
+													label = "Standardized";
+												}
+												return /* @__PURE__ */ _jsxDEV("td", {
+													className: cellClass,
+													children: [displayVal, label && /* @__PURE__ */ _jsxDEV("span", {
+														className: "cell-indicator-badge",
+														children: label
+													}, void 0, false, {
+														fileName: _jsxFileName,
+														lineNumber: 508,
+														columnNumber: 51
+													}, this)]
+												}, colName, true, {
+													fileName: _jsxFileName,
+													lineNumber: 506,
+													columnNumber: 39
+												}, this);
+											}) }, rowIndex, false, {
+												fileName: _jsxFileName,
+												lineNumber: 488,
+												columnNumber: 33
+											}, this)) : /* @__PURE__ */ _jsxDEV("tr", { children: /* @__PURE__ */ _jsxDEV("td", {
+												className: "text-center padding-large",
+												style: {
+													color: "var(--text-muted)",
+													fontStyle: "italic"
+												},
+												children: "No Neural Corrected Dataset Preview Loaded."
+											}, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 516,
+												columnNumber: 33
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 515,
+												columnNumber: 31
+											}, this) }, void 0, false, {
+												fileName: _jsxFileName,
+												lineNumber: 485,
+												columnNumber: 27
+											}, this)] }, void 0, true, {
+												fileName: _jsxFileName,
+												lineNumber: 475,
+												columnNumber: 25
+											}, this)
+										}, void 0, false, {
+											fileName: _jsxFileName,
+											lineNumber: 474,
+											columnNumber: 23
+										}, this)]
+									}, void 0, true, {
+										fileName: _jsxFileName,
+										lineNumber: 470,
+										columnNumber: 21
+									}, this)]
+								},
+								void 0,
+								true,
+								{
+									fileName: _jsxFileName,
+									lineNumber: 418,
+									columnNumber: 17
+								},
+								this
+							)
+						}, void 0, false, {
+							fileName: _jsxFileName,
+							lineNumber: 399,
+							columnNumber: 13
+						}, this),
+						/* @__PURE__ */ _jsxDEV("div", {
+							className: "report-modal-footer",
+							children: [/* @__PURE__ */ _jsxDEV("button", {
+								className: "btn-outline",
+								onClick: () => setShowReport(false),
+								children: "Back to Workspace"
+							}, void 0, false, {
+								fileName: _jsxFileName,
+								lineNumber: 533,
+								columnNumber: 15
+							}, this), /* @__PURE__ */ _jsxDEV("button", {
+								className: "btn-primary",
+								onClick: () => {
+									handleDownload();
+									setShowReport(false);
+								},
+								children: [/* @__PURE__ */ _jsxDEV(Download, { size: 18 }, void 0, false, {
+									fileName: _jsxFileName,
+									lineNumber: 537,
+									columnNumber: 17
+								}, this), " Export Cleaned CSV"]
+							}, void 0, true, {
+								fileName: _jsxFileName,
+								lineNumber: 536,
+								columnNumber: 15
+							}, this)]
+						}, void 0, true, {
+							fileName: _jsxFileName,
+							lineNumber: 532,
+							columnNumber: 13
+						}, this)
+					]
+				}, void 0, true, {
+					fileName: _jsxFileName,
+					lineNumber: 286,
+					columnNumber: 11
+				}, this)
+			}, void 0, false, {
+				fileName: _jsxFileName,
+				lineNumber: 285,
+				columnNumber: 9
+			}, this)
+		]
+	}, void 0, true, {
+		fileName: _jsxFileName,
+		lineNumber: 118,
+		columnNumber: 5
+	}, this);
+};
+_s(Dashboard, "/0VkeTHaQudZciyrzlk5B11seVs=", false, function() {
+	return [
+		useLocation,
+		useNavigate,
+		useNotifications
+	];
+});

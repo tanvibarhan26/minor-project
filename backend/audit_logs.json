@@ -1,0 +1,86 @@
+[
+    {
+        "timestamp": 1778946484.3000035,
+        "user": "admin@datacleanse.ai",
+        "action": "GSHEETS_SYNC",
+        "details": "Synchronized dataset test with Google Sheets"
+    },
+    {
+        "timestamp": 1778946488.3291488,
+        "user": "admin@datacleanse.ai",
+        "action": "GSHEETS_SYNC",
+        "details": "Synchronized dataset test with Google Sheets"
+    },
+    {
+        "timestamp": 1778946851.54536,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946853.9871147,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946854.568642,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946854.8345256,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946856.3152976,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946856.8457322,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946857.0984511,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946868.9997666,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946869.5747218,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946869.774943,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946869.9506748,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    },
+    {
+        "timestamp": 1778946870.1454775,
+        "user": "system",
+        "action": "ERROR",
+        "details": "'utf-8' codec can't decode byte 0xb0 in position 12: invalid start byte"
+    }
+]

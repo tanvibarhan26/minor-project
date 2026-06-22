@@ -1,0 +1,11 @@
+id,name,age,email,salary,join_date,city
+1,Rahul Sharma,23,rahul@gmail.com,50000,2023-01-10,Raipur
+2,Priya Singh,23,priya@gmail,60000,10-02-2023,Bhilai
+3,Aman Verma,twenty five,aman@domain.com,45000,2023/03/15,Durg
+4,Rahul Sharma,23,rahul@gmail.com,50000,2023-01-10,Raipur
+5,Neha Gupta,29,rahul@gmail.com,70000,2023-13-01,Raipur
+6,Vikram Patel,31,vikram@,abc,2023-05-20,Raipur
+7,Anjali Yadav,27,anjali@gmail.com,55000,2023-04-31,Bilaspur
+8,Rahul Sharma,26,missingname@gmail.com,48000,2023-06-12,Raipur
+9,Rohit Das,-5,rohit@gmail.com,52000,2023-07-01,Durg
+10,Sneha Iyer,28,sneha@gmail.com,51000,2023-02-30,Raipur

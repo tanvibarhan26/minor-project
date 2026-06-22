@@ -1,0 +1,20 @@
+[
+    {
+        "username": "sarthak ",
+        "email": "sarthak@gmail.com",
+        "password": "123366",
+        "role": "user"
+    },
+    {
+        "username": "Admin",
+        "email": "admin@datacleanse.ai",
+        "password": "admin123",
+        "role": "admin"
+    },
+    {
+        "username": "Sarthak Dharkar",
+        "email": "sarthakdharkar@gmai.com",
+        "password": "123456789",
+        "role": "user"
+    }
+]
