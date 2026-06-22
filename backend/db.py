@@ -6,7 +6,7 @@ import os
 import gridfs
 
 # Connect to MongoDB
-MONGO_URI = "mongodb://localhost:27017/"
+MONGO_URI = "https://minor-project-90rw.onrender.com/upload"
 client = pymongo.MongoClient(MONGO_URI)
 db = client["datacleanse_ai"]
 fs = gridfs.GridFS(db)

@@ -73,11 +73,11 @@ const DocsPage = () => {
               <h4>Example Request</h4>
               <div className="code-block">
                 <pre>
-{`curl -X POST http://localhost:8000/api/analyze \\
+{`curl -X POST https://minor-project-90rw.onrender.com/upload \\
   -F "file=@data.csv" \\
   -F "domain=ecommerce"`}
                 </pre>
-                <button className="copy-btn" onClick={() => handleCopy('curl -X POST http://localhost:8000/api/analyze -F "file=@data.csv" -F "domain=ecommerce"')}>
+                <button className="copy-btn" onClick={() => handleCopy('curl -X POST https://minor-project-90rw.onrender.com/upload -F "file=@data.csv" -F "domain=ecommerce"')}>
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                 </button>
               </div>

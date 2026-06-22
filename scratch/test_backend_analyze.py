@@ -2,7 +2,7 @@ import requests
 import os
 
 def test_backend():
-    url = "http://localhost:8000/api/analyze"
+    url = "https://minor-project-90rw.onrender.com/upload"
     csv_path = r'c:\Users\DELL\OneDrive\Documents\CS\project\Data Correction\test_data.csv'
     
     if not os.path.exists(csv_path):
